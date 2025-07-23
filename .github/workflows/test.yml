@@ -33,11 +33,6 @@ jobs:
       - name: Install Playwright browsers
         working-directory: frontend
         run: npx playwright install --with-deps
-      
-      - name: Run backend tests
-        working-directory: backend
-        run: |
-          npm test
 
       - name: Run Playwright tests
         working-directory: frontend
@@ -49,3 +44,8 @@ jobs:
         with:
           name: playwright-results
           path: frontend/test-results/
+      
+      - name: Run backend tests
+        working-directory: backend
+        run: |
+          npm test
