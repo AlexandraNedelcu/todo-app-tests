@@ -25,10 +25,6 @@ jobs:
           npm install -g wait-on
           cd backend && npm ci && cd ..
           cd frontend && npm ci && npx playwright install --with-deps && cd ..
-      
-      - name: Install wait-on
-        run: |
-          npm install -g wait-on
 
       - name: Start backend
         run: |
