@@ -9,19 +9,21 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18]
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20
+
+      - name: Install dependencies for backend
+        working-directory: backend
+        run: |
+          npm ci
 
       - name: Install dependencies for frontend
         working-directory: frontend
@@ -31,19 +33,19 @@ jobs:
       - name: Install Playwright browsers
         working-directory: frontend
         run: npx playwright install --with-deps
-
-      - name: Test frontend
-        working-directory: frontend
-        run: |
-          npm ci
-          npx playwright test
-
-      - name: Install dependencies for backend
-        working-directory: backend
-        run: |
-          npm ci
       
-      - name: Test backend
+      - name: Run backend tests
         working-directory: backend
         run: |
-          npx jest --detectOpenHandles
+          npm test
+
+      - name: Run Playwright tests
+        working-directory: frontend
+        run: npx playwright test
+
+      - name: Upload Playwright test results if failed
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-results
+          path: frontend/test-results/

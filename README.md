@@ -35,7 +35,7 @@ cd todo-app
 ```
 cd backend
 npm install
-npm start
+node index.js
 ```
 
 Backend will run at **http://localhost:4000**
