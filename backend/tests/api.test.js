@@ -1,5 +1,5 @@
-const request = require('supertest');
-const app = require('../index');
+const request = require("supertest");
+const app = require("./app");
 
 describe('API Tests', () => {
   let createdId;
