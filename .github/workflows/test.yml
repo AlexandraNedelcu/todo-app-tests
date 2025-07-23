@@ -28,7 +28,7 @@ jobs:
 
       - name: Start backend
         run: |
-          npm --prefix backend run start &
+          node backend/index.js &
         env:
           PORT: 4000
 
