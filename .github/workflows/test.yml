@@ -19,40 +19,107 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
 
-      - name: Install dependencies (frontend + backend + tools)
-        run: |
-          npm install -g wait-on
-          cd backend && npm ci && cd ..
-          cd frontend && npm ci && npx playwright install --with-deps && cd ..
+      - name: Install dependencies (backend)
+        working-directory: backend
+        run: npm ci
 
-      - name: Start backend
+      - name: Install dependencies (frontend)
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Install wait-on globally
+        run: npm install -g wait-on
+
+      - name: Start backend server
+        working-directory: backend
         run: |
-          node backend/index.js &
+          echo "Starting backend server..."
+          PORT=4000 node index.js > backend.log 2>&1 &
+          echo $! > backend.pid
+          echo "Backend PID: $(cat backend.pid)"
         env:
-          PORT: 4000
+          NODE_ENV: test
 
-      - name: Start frontend
+      - name: Start frontend server
+        working-directory: frontend
         run: |
-          npm --prefix frontend run dev -- --host &
+          echo "Starting frontend server..."
+          npm run dev -- --host 0.0.0.0 --port 5173 > frontend.log 2>&1 &
+          echo $! > frontend.pid
+          echo "Frontend PID: $(cat frontend.pid)"
         env:
-          PORT: 5173
+          NODE_ENV: test
 
-      - name: Wait for apps to be ready
+      - name: Wait for services to be ready
         run: |
-          wait-on http://localhost:5173 http://localhost:4000
+          echo "Waiting for backend health check at http://localhost:4000/health..."
+          wait-on http://localhost:4000/health --timeout 60000
+          echo "Waiting for frontend at http://localhost:5173..."
+          wait-on http://localhost:5173 --timeout 60000
+          echo "Both services are ready!"
+          # Give a small additional buffer for full initialization
+          sleep 2
+
+      - name: Run backend tests (API)
+        working-directory: backend
+        run: npm test
+        env:
+          NODE_ENV: test
 
       - name: Run Playwright tests (UI)
         working-directory: frontend
-        run: npx playwright test
+        run: npx playwright test --reporter=list
+        env:
+          NODE_ENV: test
+
+      - name: Show service logs on failure
+        if: failure()
+        run: |
+          echo "=== Backend logs ==="
+          if [ -f backend/backend.log ]; then
+            cat backend/backend.log
+          else
+            echo "No backend log file found"
+          fi
+          echo ""
+          echo "=== Frontend logs ==="
+          if [ -f frontend/frontend.log ]; then
+            cat frontend/frontend.log
+          else
+            echo "No frontend log file found"
+          fi
 
       - name: Upload Playwright test results if failed
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-results
-          path: frontend/test-results/
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
 
-      - name: Run backend tests (API)
-        working-directory: backend
-        run: npm test
+      - name: Stop services
+        if: always()
+        run: |
+          if [ -f backend/backend.pid ]; then
+            echo "Stopping backend (PID: $(cat backend/backend.pid))"
+            kill $(cat backend/backend.pid) || true
+            rm backend/backend.pid
+          fi
+          if [ -f frontend/frontend.pid ]; then
+            echo "Stopping frontend (PID: $(cat frontend/frontend.pid))"
+            kill $(cat frontend/frontend.pid) || true
+            rm frontend/frontend.pid
+          fi
+          pkill -f "node index.js" || true
+          pkill -f "vite" || true
+          rm -f backend/backend.log frontend/frontend.log
