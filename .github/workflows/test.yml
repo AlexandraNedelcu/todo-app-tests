@@ -30,7 +30,7 @@ jobs:
 
       - name: Install Playwright browsers
         working-directory: frontend
-        run: npx playwright install --with-dep
+        run: npx playwright install --with-deps
 
       - name: Install and test backend
         working-directory: backend
