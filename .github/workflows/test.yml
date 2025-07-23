@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repo
@@ -20,21 +20,33 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies for backend
-        working-directory: backend
+      - name: Install dependencies (frontend + backend + tools)
         run: |
-          npm ci
-
-      - name: Install dependencies for frontend
-        working-directory: frontend
+          npm install -g wait-on
+          cd backend && npm ci && cd ..
+          cd frontend && npm ci && npx playwright install --with-deps && cd ..
+      
+      - name: Install wait-on
         run: |
-          npm ci
+          npm install -g wait-on
 
-      - name: Install Playwright browsers
-        working-directory: frontend
-        run: npx playwright install --with-deps
+      - name: Start backend
+        run: |
+          npm --prefix backend run start &
+        env:
+          PORT: 4000
 
-      - name: Run Playwright tests
+      - name: Start frontend
+        run: |
+          npm --prefix frontend run dev -- --host &
+        env:
+          PORT: 5173
+
+      - name: Wait for apps to be ready
+        run: |
+          wait-on http://localhost:5173 http://localhost:4000
+
+      - name: Run Playwright tests (UI)
         working-directory: frontend
         run: npx playwright test
 
@@ -44,8 +56,7 @@ jobs:
         with:
           name: playwright-results
           path: frontend/test-results/
-      
-      - name: Run backend tests
+
+      - name: Run backend tests (API)
         working-directory: backend
-        run: |
-          npm test
+        run: npm test
