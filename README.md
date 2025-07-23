@@ -1,4 +1,14 @@
+# Todo App – Full Stack (React + Node.js)
+
+This is a full-stack Todo application with:
+- Frontend: React (Vite) + Playwright tests
+- Backend: Node.js + Express + Jest/Supertest tests
+- CI: GitHub Actions for test automation
+- Code coverage (backend)
+- Visual snapshots for UI tests
+
 ## Project Structure
+```
 todo-app/
 │
 ├── frontend/ # React app (Vite)
@@ -11,20 +21,26 @@ todo-app/
 │ └── test.yml # GitHub Actions CI config
 │
 └── README.md # This file
-
+```
 
 ## Local Setup Instructions
 
-### 1. Run Backend (API)
+### 1. Clone the repository
+```
+git clone https://github.com/AlexandraNedelcu/todo-app-tests.git
+cd todo-app
+```
+
+### 2. Run Backend (API)
 ```
 cd backend
 npm install
 npm start
 ```
 
-Backend will run at http://localhost:4000
+Backend will run at **http://localhost:4000**
 
-### 2. Run Frontend (UI)
+### 3. Run Frontend (UI)
 Open new terminal:
 ```
 cd frontend
@@ -32,8 +48,7 @@ npm install
 npm run dev
 ```
 
-Frontend will run at http://localhost:5173
-
+Frontend will run at **http://localhost:5173**
 
 ## Run Tests
 
@@ -51,4 +66,16 @@ npx playwright install     # Only once
 npx playwright test        # Run UI tests
 ```
 
-Failed UI tests will generate screenshots and video under: frontend/test-results/
+Failed UI tests will generate screenshots and video under:
+```
+frontend/test-results/
+```
+
+## GitHub Actions (CI)
+
+- All tests run automatically on every push or pull request to main
+- Failed UI test artifacts (screenshots, video) are saved for inspection
+- You can find CI status in the GitHub "Actions" tab
+
+## Code Coverage
+- API coverage is generated via Jest
